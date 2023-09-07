@@ -1,6 +1,7 @@
 import csv
 import json
 import sys
+from jsonpath_ng import jsonpath, parse
 
 def des_csv(s, a, b):
     data = []
@@ -13,13 +14,15 @@ def des_csv(s, a, b):
 def des_json(s, path):
     with open(s) as file:
         data = json.load(file)
-    return data[path]
+    jsonpath_expression = parse(path)
+    m = jsonpath_expression.find(data)
+    return m
 
 def main():
     if sys.argv[1] == "csv":
         result = des_csv("example.csv", 2, 2)
     elif sys.argv[1] == "json":
-        result = des_json("example.json", "str")
+        result = des_json("example.json", 'str1')
     print(result)
 
 if __name__ == "__main__":
