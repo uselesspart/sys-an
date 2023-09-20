@@ -20,9 +20,9 @@ def des_json(s, path):
 
 def main():
     if sys.argv[1] == "csv":
-        result = des_csv("example.csv", int(sys.argv[2]), int(sys.argv[3]))
+        result = des_csv(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
     elif sys.argv[1] == "json":
-        result = des_json("example.json", sys.argv[2])
+        result = des_json(sys.argv[2], sys.argv[3])
     print(result)
 
 if __name__ == "__main__":
