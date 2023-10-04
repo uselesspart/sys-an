@@ -21,7 +21,7 @@ def task(path):
 
         matrix.append([r1, r2, r3, r4, r5])
 
-    matrix.remove([0, 0, 0, 0, 0])
+    del matrix[0]
 
     return np.matrix(matrix)
 
