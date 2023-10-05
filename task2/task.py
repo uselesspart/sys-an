@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import csv
+import io
 
-def task(path):
-    df = pd.read_csv(path)
+def task(graph):
+    df = pd.read_csv(io.StringIO(graph), sep=",")
     
     print(df)
 
@@ -28,7 +29,7 @@ def task(path):
     return np.matrix(matrix)
 
 def main():
-    print(task('example.csv'))  
+    print(task("A, B\n1, 2\n2, 3\n2, 6\n3, 4\n3, 5"))  
 
 if __name__ == "__main__":
     main()
