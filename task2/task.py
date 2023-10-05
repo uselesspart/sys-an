@@ -5,6 +5,8 @@ import csv
 def task(path):
     df = pd.read_csv(path)
     
+    print(df)
+
     df.columns = ['parent', 'child']
 
     matrix = []
@@ -18,10 +20,10 @@ def task(path):
         
         if r5 != 0:
             r5 -= 1
-
+        
         matrix.append([r1, r2, r3, r4, r5])
 
-    del matrix[0]
+    # del matrix[0]
 
     return np.matrix(matrix)
 
