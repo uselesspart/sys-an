@@ -72,7 +72,7 @@ def calculate_kendell_similarity(experts):
 
     return S / Dmax
 
-def main_task(str_a: str, str_b: str):
+def task(str_a: str, str_b: str):
     matrix_f = generate_matrix_from_expert(str_a)
     matrix_g = generate_matrix_from_expert(str_b)
     experts = [matrix_g, matrix_f]
@@ -81,7 +81,7 @@ def main_task(str_a: str, str_b: str):
 
 if __name__ == "__main__":
     print(
-        main_task(
+        task(
             "[1,[2,3],4,[5,6,7],8,9,10]",
             "[[1,2],[3,4,5],6,7,9,[8,10]]"
         )
