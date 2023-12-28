@@ -1,90 +1,123 @@
 import numpy as np
 
-# Расширяем список, преобразуя вложенные списки в один плоский список
-def expand_list(r_list):
-    expanded_ranks = []
-    for elem in r_list:
-        if isinstance(elem, int):
-            expanded_ranks.append(elem)
+def convert_str_to_clusters(input_str):
+    input_str = str(input_str[1:-1])
+    split_values = input_str.split(",")
+    clusters = []
+    cluster_started = False
+    for substr in split_values:
+        was_cluster_started = cluster_started
+        if '[' in substr:
+            substr = substr[1:]
+            cluster_started = True
+        if ']' in substr:
+            substr = substr[:-1]
+            cluster_started = False
+
+        if not was_cluster_started:
+            clusters.append([int(substr)])
         else:
-            expanded_ranks.extend(elem)
-    return sorted(expanded_ranks)
+            clusters[-1].append(int(substr))
+    return clusters
 
-# Создаём матрицу рангов из расширенного списка
-def construct_matrix(rank_lst):
-    expanded_list = expand_list(rank_lst)
-    rank_mtrx = np.zeros(shape=(len(expanded_list), len(expanded_list)), dtype=int)
-    for i, val_i in enumerate(expanded_list):
-        for j, val_j in enumerate(expanded_list):
-            if val_i == val_j or not is_inferior(rank_lst, val_i, val_j):
-                rank_mtrx[i, j] = 1
-    return rank_mtrx
+def convert_str_to_matrix(input_str: str):
+    matrix = []
+    n = 0
 
-# Проверяем, является ли один элемент инфериорным по отношению к другому в заданном списке рангов
-def is_inferior(rank_lst, first, second):
-    for item in rank_lst:
-        if isinstance(item, int):
-            if first == item:
-                return True
-            if second == item:
-                return False
+    clusters = convert_str_to_clusters(input_str)
+    for cluster in clusters:
+        n += len(cluster)
+    for i in range(n):
+        matrix.append([1] * n)
+
+    excluded = []
+    for cluster in clusters:
+        for excluded_elem in excluded:
+            for elem in cluster:
+                matrix[elem - 1][excluded_elem - 1] = 0
+        for elem in cluster:
+            excluded.append(int(elem))
+
+    return np.array(matrix)
+
+def get_and_matrix(matrix1, matrix2):
+    rows = len(matrix1)
+    cols = len(matrix1[0])
+    result_matrix = []
+    for row in range(rows):
+        result_matrix.append([0] * cols)
+
+    for row in range(rows):
+        for col in range(cols):
+            result_matrix[row][col] = matrix1[row][col] * matrix2[row][col]
+
+    return np.array(result_matrix)
+
+def get_or_matrix(matrix1, matrix2):
+    rows = len(matrix1)
+    cols = len(matrix1[0])
+    result_matrix = []
+    for row in range(rows):
+        result_matrix.append([0] * cols)
+
+    for row in range(rows):
+        for col in range(cols):
+            result_matrix[row][col] = max(matrix1[row][col], matrix2[row][col])
+
+    return result_matrix
+
+def find_clusters(matrix, est1, est2):
+    clusters = {}
+
+    rows = len(matrix)
+    cols = len(matrix[0])
+    exclude=[]
+    for row in range(rows):
+        if row+1 in exclude:
             continue
-        if first in item:
-            return second not in item
-        if second in item:
-            return first in item
-    return False
+        clusters[row + 1] = [row + 1]
+        for col in range(row+1, cols):
+            if matrix[row][col] == 0:
+                clusters[row + 1].append(col + 1)
+                exclude.append(col+1)
 
-# Собираем итоговый рейтинг на основе спорных пар, представленных в виде списков рангов
-def assemble_ranking(disputed_pairs, ranks_1, ranks_2):
-    expanded_1 = expand_list(ranks_1)
-    expanded_2 = expand_list(ranks_2)
-    final_ranking = []
+    result = []
+    for k in clusters:
+        if not result:
+            result.append(clusters[k])
+            continue
+        for i, elem in enumerate(result):
+            if np.sum(est1[elem[0] - 1]) == np.sum(est1[k - 1]) and np.sum(est2[elem[0] - 1]) == np.sum(est2[k - 1]):
+                for c in clusters[k]:
+                    result[i].append(c)
+                    break
 
-    added_items = set()
+            if np.sum(est1[elem[0] - 1]) < np.sum(est1[k - 1]) or np.sum(est2[elem[0] - 1]) < np.sum(est2[k - 1]):
+                result = result[:i] + clusters[k] + result[i:]
+                break
+        result.append(clusters[k])
 
-    for itm in expanded_1 + expanded_2:
-        if itm not in added_items:
-            controversy_group = [itm]
-            for pair in disputed_pairs:
-                if itm in pair:
-                    other_item = pair[0] if pair[1] == itm else pair[1]
-                    controversy_group.append(other_item)
-            
-            if len(controversy_group) > 1:
-                final_ranking.append(controversy_group)
-            else:
-                final_ranking.append(itm)
-            
-            added_items.update(controversy_group)
+    final = []
+    for r in result:
+        if len(r) == 1:
+            final.append(r[0])
+        else:
+            final.append(r)
+    return str(final)
 
-    return final_ranking
+def task(input_str1, input_str2):
+    matrix1 = convert_str_to_matrix(input_str1)
+    matrix2 = convert_str_to_matrix(input_str2)
 
-# Задаём функцию для решения задачи
-def task(input_1, input_2):
-    rank_1 = construct_matrix(input_1)
-    rank_2 = construct_matrix(input_2)
+    and_matrix = get_and_matrix(matrix1, matrix2)
+    and_matrix_transposed = get_and_matrix(np.transpose(matrix1), np.transpose(matrix2))
 
-    combined_mtrx = np.multiply(rank_1, rank_2)
-    transposed_mtrx = np.multiply(np.transpose(rank_1), np.transpose(rank_2))
-    dispute_mtrx = np.zeros(rank_1.shape, dtype=int)
-    for i in range(len(combined_mtrx)):
-        for j in range(len(combined_mtrx[i])):
-            dispute_mtrx[i, j] = combined_mtrx[i, j] or transposed_mtrx[i, j]
+    or_matrix = get_or_matrix(and_matrix, and_matrix_transposed)
+    clusters = find_clusters(or_matrix, matrix1, matrix2)
+    return clusters
 
-    disputed_pairs = []
-    for i in range(len(dispute_mtrx)):
-        for j in range(len(dispute_mtrx[i])):
-            if i < j:
-                continue
-            if dispute_mtrx[i, j] == 0:
-                disputed_pairs.append((j + 1, i + 1))
-
-    return assemble_ranking(disputed_pairs, input_1, input_2)
-
-# Входные данные
-input_1 = [1, [2, 3], 4, [5, 6, 7], 8, 9, 10]
-input_2 = [[1, 2], [3, 4, 5], 6, 7, 9, [8, 10]]
-
-# Вызываем и печатаем результат функции task
-print(task(input_1, input_2))
+if __name__ == "__main__":
+    input_str1 = '[10, 2, 3, 4, 5, 6, 7, 8, 9, 1]'
+    input_str2 = '[1, 2, 3, 4, 5, 6, 7, 9, 8, 10]'
+    results = task(input_str1, input_str2)
+    print(results)
